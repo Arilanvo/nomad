@@ -58,18 +58,18 @@ func newSubscription(req *SubscribeRequest, item *bufferItem, unsub func()) *Sub
 	}
 }
 
-func (s *Subscription) Next(ctx context.Context) ([]Event, error) {
+func (s *Subscription) Next(ctx context.Context) (Events, error) {
 	if atomic.LoadUint32(&s.state) == subscriptionStateClosed {
-		return nil, ErrSubscriptionClosed
+		return Events{}, ErrSubscriptionClosed
 	}
 
 	for {
 		next, err := s.currentItem.Next(ctx, s.forceClosed)
 		switch {
 		case err != nil && atomic.LoadUint32(&s.state) == subscriptionStateClosed:
-			return nil, ErrSubscriptionClosed
+			return Events{}, ErrSubscriptionClosed
 		case err != nil:
-			return nil, err
+			return Events{}, err
 		}
 		s.currentItem = next
 
@@ -77,7 +77,7 @@ func (s *Subscription) Next(ctx context.Context) ([]Event, error) {
 		if len(events) == 0 {
 			continue
 		}
-		return events, nil
+		return Events{Index: next.Index, Events: events}, nil
 	}
 }
 
