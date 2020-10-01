@@ -7,20 +7,6 @@ import (
 	"github.com/hashicorp/nomad/nomad/structs"
 )
 
-const (
-	TopicEval  stream.Topic = "Eval"
-	TopicAlloc stream.Topic = "Alloc"
-)
-
-type EvalEvent struct {
-	Eval *structs.Evaluation
-}
-
-type AllocEvent struct {
-	Event string
-	Alloc *structs.Allocation
-}
-
 func ApplyPlanResultEventsFromChanges(tx ReadTxn, changes Changes) ([]stream.Event, error) {
 	var events []stream.Event
 	for _, change := range changes.Changes {
@@ -33,10 +19,10 @@ func ApplyPlanResultEventsFromChanges(tx ReadTxn, changes Changes) ([]stream.Eve
 
 			event := stream.Event{
 				Topic: TopicDeployment,
+				Type:  TypeDeploymentUpdate,
 				Index: changes.Index,
 				Key:   after.ID,
 				Payload: &DeploymentEvent{
-					Event:      "StatusUpdate",
 					Deployment: after,
 				},
 			}
@@ -65,17 +51,17 @@ func ApplyPlanResultEventsFromChanges(tx ReadTxn, changes Changes) ([]stream.Eve
 			before := change.Before
 			var msg string
 			if before == nil {
-				msg = "alloc created"
+				msg = TypeAllocCreated
 			} else {
-				msg = "alloc updated"
+				msg = TypeAllocUpdated
 			}
 
 			event := stream.Event{
 				Topic: TopicAlloc,
+				Type:  msg,
 				Index: changes.Index,
 				Key:   after.ID,
 				Payload: &AllocEvent{
-					Event: msg,
 					Alloc: after,
 				},
 			}

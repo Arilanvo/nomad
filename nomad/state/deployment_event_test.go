@@ -47,7 +47,7 @@ func TestDeploymentEventFromChanges(t *testing.T) {
 	require.NoError(t, s.UpdateDeploymentStatus(ctx, 100, req))
 
 	events := WaitForEvents(t, s, 100, 1, 1*time.Second)
-	require.Len(t, events, 1)
+	require.Len(t, events, 2)
 
 	got := events[0]
 	require.Equal(t, uint64(100), got.Index)
@@ -55,7 +55,7 @@ func TestDeploymentEventFromChanges(t *testing.T) {
 
 	de := got.Payload.(*DeploymentEvent)
 	require.Equal(t, structs.DeploymentStatusPaused, de.Deployment.Status)
-	require.Equal(t, j, de.Job)
+	require.Contains(t, got.FilterKeys, j.ID)
 
 }
 
@@ -125,7 +125,7 @@ func TestDeploymentEventFromChanges_Promotion(t *testing.T) {
 	require.NoError(t, s.UpdateDeploymentPromotion(ctx, 100, req))
 
 	events := WaitForEvents(t, s, 100, 1, 1*time.Second)
-	require.Len(t, events, 1)
+	require.Len(t, events, 2)
 
 	got := events[0]
 	require.Equal(t, uint64(100), got.Index)
@@ -133,11 +133,9 @@ func TestDeploymentEventFromChanges_Promotion(t *testing.T) {
 
 	de := got.Payload.(*DeploymentEvent)
 	require.Equal(t, structs.DeploymentStatusRunning, de.Deployment.Status)
-	require.Len(t, de.Allocs, 2)
-
 }
 
-func WaitForEvents(t *testing.T, s *StateStore, index uint64, want int, timeout time.Duration) []stream.Event {
+func WaitForEvents(t *testing.T, s *StateStore, index uint64, minEvents int, timeout time.Duration) []stream.Event {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -153,7 +151,7 @@ func WaitForEvents(t *testing.T, s *StateStore, index uint64, want int, timeout 
 	maxAttempts := 10
 	for {
 		got := EventsForIndex(t, s, index)
-		if len(got) == want {
+		if len(got) >= minEvents {
 			return got
 		}
 		maxAttempts--

@@ -7,44 +7,6 @@ import (
 	"github.com/hashicorp/nomad/nomad/structs"
 )
 
-const (
-	TopicNodeRegistration   stream.Topic = "NodeRegistration"
-	TopicNodeDeregistration stream.Topic = "NodeDeregistration"
-	TopicNodeDrain          stream.Topic = "NodeDrain"
-	TopicNodeEvent          stream.Topic = "NodeEvent"
-)
-
-type NodeRegistrationEvent struct {
-	Event      *structs.NodeEvent
-	NodeStatus string
-}
-
-type NodeDeregistrationEvent struct {
-	NodeID string
-}
-
-type NodeEvent struct {
-	Node *structs.Node
-}
-
-// NNodeDrainEvent is the Payload for a NodeDrain event. It contains
-// information related to the Node being drained as well as high level
-// information about the current allocations on the Node
-type NodeDrainEvent struct {
-	Node      *structs.Node
-	JobAllocs map[string]*JobDrainDetails
-}
-
-type NodeDrainAllocDetails struct {
-	ID      string
-	Migrate *structs.MigrateStrategy
-}
-
-type JobDrainDetails struct {
-	Type         string
-	AllocDetails map[string]NodeDrainAllocDetails
-}
-
 // NodeRegisterEventFromChanges generates a NodeRegistrationEvent from a set
 // of transaction changes.
 func NodeRegisterEventFromChanges(tx ReadTxn, changes Changes) ([]stream.Event, error) {
